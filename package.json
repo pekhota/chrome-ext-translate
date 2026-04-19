@@ -2,8 +2,16 @@
   "name": "chrome-ext-translate",
   "version": "1.0.0",
   "description": "Chrome extension — select any word in a PDF and translate it with AI using page context",
+  "type": "module",
   "scripts": {
+    "lint":         "eslint .",
+    "lint:fix":     "eslint . --fix",
+    "validate":     "node scripts/validate-manifest.js",
     "update-pdfjs": "node setup.js"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@eslint/js":  "^9.0.0",
+    "eslint":      "^9.0.0",
+    "globals":     "^15.0.0"
+  }
 }

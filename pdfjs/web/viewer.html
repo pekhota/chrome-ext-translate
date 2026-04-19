@@ -1205,19 +1205,90 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="printContainer"></div>
 
     <!-- Translation overlay (injected by PDF Translate extension) -->
-    <div id="translate-bubble" style="display:none;position:fixed;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18),0 1px 4px rgba(0,0,0,.1);padding:12px 14px;min-width:200px;max-width:320px;z-index:99999;font:14px/1 system-ui,sans-serif;border:1px solid #e5e5e5;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;">
-        <span id="tb-word" style="font-weight:600;color:#111;word-break:break-word;"></span>
-        <button id="tb-close" style="background:none;border:none;cursor:pointer;font-size:20px;color:#bbb;line-height:1;padding:0;flex-shrink:0;" title="Close">×</button>
+    <style>
+      #tb { display:none; position:fixed; background:#fff; border-radius:12px;
+            box-shadow:0 8px 32px rgba(0,0,0,.18),0 1px 4px rgba(0,0,0,.08);
+            width:380px; max-height:80vh; overflow-y:auto;
+            z-index:99999; font:14px/1.5 system-ui,sans-serif;
+            border:1px solid #e5e5e5; }
+      #tb-header { display:flex; justify-content:space-between; align-items:flex-start;
+                   padding:12px 14px 10px; border-bottom:1px solid #f0f0f0; gap:8px; }
+      #tb-word { font-size:17px; font-weight:700; color:#111; word-break:break-word; }
+      #tb-pos-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+      .tb-badge { font-size:11px; padding:2px 7px; border-radius:10px;
+                  font-weight:500; white-space:nowrap; }
+      .tb-badge-pos  { background:#e8f0fe; color:#1a56db; }
+      .tb-badge-form { background:#fef3c7; color:#92400e; }
+      #tb-close { background:none; border:none; cursor:pointer; font-size:22px;
+                  color:#bbb; line-height:1; padding:0; flex-shrink:0; }
+      #tb-close:hover { color:#555; }
+      #tb-loading { padding:12px 14px; color:#888; font-style:italic; font-size:13px; }
+      #tb-body { padding:0 14px 12px; }
+      .tb-section { margin-top:12px; }
+      .tb-section-label { font-size:10px; font-weight:600; text-transform:uppercase;
+                          letter-spacing:.06em; color:#999; margin-bottom:4px; }
+      .tb-section-content { color:#222; line-height:1.55; font-size:13.5px; }
+      .tb-examples { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+      .tb-examples li { padding:5px 8px; background:#f8f9fa; border-radius:6px;
+                        border-left:3px solid #d1d5db; font-size:13px; color:#333; line-height:1.5; }
+      .tb-divider { border:none; border-top:1px solid #f0f0f0; margin:12px 0 0; }
+      #tb-translation-text { font-size:18px; font-weight:700; color:#1a56db; }
+      .tb-error { color:#c62828; }
+      #tb-context-details { margin-top:10px; border-top:1px solid #f0f0f0; padding:8px 14px 10px; }
+      #tb-context-details summary { cursor:pointer; font-size:11px; color:#999;
+                                    user-select:none; list-style:none; display:flex;
+                                    align-items:center; gap:4px; }
+      #tb-context-text { margin-top:6px; font-size:11px; color:#666; line-height:1.5;
+                         max-height:80px; overflow-y:auto; white-space:pre-wrap;
+                         word-break:break-word; background:#f9f9f9; border-radius:4px; padding:6px; }
+    </style>
+
+    <div id="tb">
+      <div id="tb-header">
+        <div>
+          <div id="tb-word"></div>
+          <div id="tb-pos-row"></div>
+        </div>
+        <button id="tb-close" title="Close">×</button>
       </div>
-      <div id="tb-loading" style="color:#888;font-style:italic;font-size:13px;">Translating…</div>
-      <div id="tb-result" style="color:#222;line-height:1.55;white-space:pre-wrap;word-break:break-word;"></div>
-      <details id="tb-context-details" style="margin-top:8px;border-top:1px solid #f0f0f0;padding-top:8px;display:none;">
-        <summary id="tb-context-summary" style="cursor:pointer;font-size:11px;color:#888;user-select:none;list-style:none;display:flex;align-items:center;gap:4px;">
+
+      <div id="tb-loading">Analyzing…</div>
+
+      <div id="tb-body" style="display:none">
+        <div class="tb-section">
+          <div class="tb-section-label">Meaning in context</div>
+          <div class="tb-section-content" id="tb-en-explanation"></div>
+        </div>
+
+        <div class="tb-section">
+          <div class="tb-section-label">Usage examples</div>
+          <ul class="tb-examples" id="tb-examples"></ul>
+        </div>
+
+        <hr class="tb-divider">
+
+        <div class="tb-section">
+          <div class="tb-section-label">Translation</div>
+          <div id="tb-translation-text"></div>
+        </div>
+
+        <div class="tb-section">
+          <div class="tb-section-label">Explanation</div>
+          <div class="tb-section-content" id="tb-target-explanation"></div>
+        </div>
+
+        <div class="tb-section">
+          <div class="tb-section-label">Example translation</div>
+          <div class="tb-section-content" id="tb-translated-example"></div>
+        </div>
+      </div>
+
+      <details id="tb-context-details" style="display:none">
+        <summary>
           <span id="tb-context-toggle">▶</span>
           <span id="tb-context-label"></span>
         </summary>
-        <div id="tb-context-text" style="margin-top:6px;font-size:11px;color:#666;line-height:1.5;max-height:80px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;background:#f9f9f9;border-radius:4px;padding:6px;"></div>
+        <div id="tb-context-text"></div>
       </details>
     </div>
     <script type="module" src="translate-overlay.js"></script>
