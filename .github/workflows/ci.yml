@@ -61,7 +61,7 @@ jobs:
             --exclude "pdfjs/web/compressed.tracemonkey-pldi-09.pdf"
 
       - name: Upload extension artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pdf-ai-translate
           path: extension.zip
