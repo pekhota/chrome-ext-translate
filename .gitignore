@@ -1,5 +1,4 @@
 node_modules/
-package-lock.json
 .claude/
 
 # PDF.js source maps — not needed to run the extension
